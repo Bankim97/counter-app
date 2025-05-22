@@ -65,46 +65,47 @@
 
   <!-- ✅ Firebase 코드 포함된 스크립트 -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDqtiRZr8Wo8Ze-4Zfvk2PEIuViTWWQBgq",
-      authDomain: "realtime-counter-c7933.firebaseapp.com",
-      databaseURL: "https://realtime-counter-c7933-default-rtdb.asia-southeast1.firebasedatabase.app",
+  const firebaseConfig = {
+    apiKey: "AIzaSyDqtiRZr8Wo8Ze-4Zfvk2PEIuViTWWQBgq",
+    authDomain: "realtime-counter-c7933.firebaseapp.com",
+    databaseURL: "https://realtime-counter-c7933-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "realtime-counter-c7933",
+    storageBucket: "realtime-counter-c7933.appspot.com",
+    messagingSenderId: "126643244800",
+    appId: "1:126643244800:web:07115c0441e2a5d19d6de5"
+  };
 
-      projectId: "realtime-counter-c7933",
-      storageBucket: "realtime-counter-c7933.appspot.com",
-      messagingSenderId: "126643244800",
-      appId: "1:126643244800:web:07115c0441e2a5d19d6de5"
-    };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const countRef = ref(db, "sharedCounter");
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const countRef = ref(db, "sharedCounter");
+  const countEl = document.getElementById('count');
+  const increaseBtn = document.getElementById('increase');
+  const decreaseBtn = document.getElementById('decrease');
+  const resetBtn = document.getElementById('reset');
 
-    const countEl = document.getElementById('count');
-    const increaseBtn = document.getElementById('increase');
-    const decreaseBtn = document.getElementById('decrease');
-    const resetBtn = document.getElementById('reset');
+  // ✅ 실시간 반영
+  onValue(countRef, (snapshot) => {
+    const val = snapshot.val();
+    countEl.innerText = (typeof val === 'number') ? val : 0;
+  });
 
-    // 실시간 데이터 반영
-    onValue(countRef, (snapshot) => {
-      const val = snapshot.val();
-      countEl.innerText = val ?? 0;
+  // ✅ 안전한 업데이트 함수
+  function updateCount(delta) {
+    get(countRef).then((snapshot) => {
+      const current = snapshot.val() ?? 0;
+      set(countRef, current + delta);
     });
+  }
 
-    // 카운트 업데이트 함수
-    function updateCount(delta) {
-      onValue(countRef, (snapshot) => {
-        const current = snapshot.val() ?? 0;
-        set(countRef, current + delta);
-      }, { onlyOnce: true });
-    }
+  increaseBtn.onclick = () => updateCount(1);
+  decreaseBtn.onclick = () => updateCount(-1);
+  resetBtn.onclick = () => set(countRef, 0);
+</script>
 
-    increaseBtn.onclick = () => updateCount(1);
-    decreaseBtn.onclick = () => updateCount(-1);
-    resetBtn.onclick = () => set(countRef, 0);
   </script>
 </body>
 </html>
