@@ -2,111 +2,63 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>실시간 카운터</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supabase 실시간 카운터</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      padding: 50px;
-      background-color: #f4f4f4;
-      margin: 0;
-    }
-    #count {
-      font-size: 5rem;
-      margin: 40px 0;
-    }
-    .button-group {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-    button {
-      font-size: 1.5rem;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 10px;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
+    body { font-family: Arial; text-align: center; padding: 50px; background: #f4f4f4; margin: 0; }
+    #count { font-size: 5rem; margin: 30px 0; }
+    .btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    button { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 8px; background: #007bff; color: white; cursor: pointer; }
+    button:hover { background: #0056b3; }
     @media (max-width: 600px) {
-      #count {
-        font-size: 3rem;
-      }
-      button {
-        width: 100%;
-        max-width: 280px;
-        font-size: 1.2rem;
-      }
-      .button-group {
-        flex-direction: column;
-        align-items: center;
-      }
+      #count { font-size: 3rem; }
+      .btns { flex-direction: column; }
+      button { width: 100%; max-width: 280px; font-size: 1rem; }
     }
   </style>
 </head>
 <body>
   <h1>실시간 카운터</h1>
   <div id="count">0</div>
-  <div class="button-group">
-    <button id="increase">위</button>
-    <button id="decrease">아래</button>
+  <div class="btns">
+    <button id="inc">위</button>
+    <button id="dec">아래</button>
     <button id="reset">리셋</button>
   </div>
 
-  <!-- Firebase SDK (compat 버전) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDqtiRZr8Wo8Ze-4Zfvk2PEIuViTWWQBgq",
-      authDomain: "realtime-counter-c7933.firebaseapp.com",
-      databaseURL: "https://realtime-counter-c7933-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "realtime-counter-c7933",
-      storageBucket: "realtime-counter-c7933.appspot.com",
-      messagingSenderId: "126643244800",
-      appId: "1:126643244800:web:07115c0441e2a5d19d6de5"
-    };
+    const SUPABASE_URL = "https://maemi7839-gmail-com-s-project.supabase.co";
+    const SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeGVma2J2b2FkYXB2dHJ5cmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5MTIyNDcsImV4cCI6MjA2MzQ4ODI0N30.oc8AuJIl177tADqZaRshqldz_e_NtVjZZ-W2oOJSocg; // 👈 Supabase > Settings > API > anon public key 로 교체!
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const countRef = db.ref("sharedCounter");
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const countEl = document.getElementById('count');
-    const increaseBtn = document.getElementById('increase');
-    const decreaseBtn = document.getElementById('decrease');
-    const resetBtn = document.getElementById('reset');
+    const countEl = document.getElementById("count");
+    const incBtn = document.getElementById("inc");
+    const decBtn = document.getElementById("dec");
+    const rstBtn = document.getElementById("reset");
 
-    // 실시간 반영
-    countRef.on("value", function(snapshot) {
-      const val = snapshot.val();
-      if (typeof val === "number") {
-        countEl.innerText = val;
-      } else {
-        countEl.innerText = 0;
-        countRef.set(0);  // 초기화
-      }
-    });
-
-    function updateCount(delta) {
-      countRef.once("value").then(function(snapshot) {
-        const current = snapshot.val() ?? 0;
-        countRef.set(current + delta);
-      });
+    async function fetchCount() {
+      let { data } = await supabase.from("counter").select("value").eq("id", 1).single();
+      if (data) countEl.innerText = data.value;
     }
 
-    increaseBtn.onclick = () => updateCount(1);
-    decreaseBtn.onclick = () => updateCount(-1);
-    resetBtn.onclick = () => countRef.set(0);
+    supabase
+      .channel("realtime:counter")
+      .on("postgres_changes", { event: "*", schema: "public", table: "counter", filter: "id=eq.1" }, payload => {
+        countEl.innerText = payload.new.value;
+      })
+      .subscribe();
+
+    async function update(delta) {
+      await supabase.rpc("increment_counter", { inc: delta });
+    }
+
+    incBtn.onclick = () => update(1);
+    decBtn.onclick = () => update(-1);
+    rstBtn.onclick = () => supabase.from("counter").update({ value: 0 }).eq("id", 1);
+
+    fetchCount();
   </script>
 </body>
 </html>
