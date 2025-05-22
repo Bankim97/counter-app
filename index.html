@@ -29,9 +29,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://maemi7839-gmail-com-s-project.supabase.co";
-    const SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeGVma2J2b2FkYXB2dHJ5cmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5MTIyNDcsImV4cCI6MjA2MzQ4ODI0N30.oc8AuJIl177tADqZaRshqldz_e_NtVjZZ-W2oOJSocg; // 👈 Supabase > Settings > API > anon public key 로 교체!
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeGVma2J2b2FkYXB2dHJ5cmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5MTIyNDcsImV4cCI6MjA2MzQ4ODI0N30.oc8AuJIl177tADqZaRshqldz_e_NtVjZZ-W2oOJSocg";
 
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const COUNTER_ID = 2;
 
     const countEl = document.getElementById("count");
     const incBtn = document.getElementById("inc");
@@ -39,24 +40,50 @@
     const rstBtn = document.getElementById("reset");
 
     async function fetchCount() {
-      let { data } = await supabase.from("counter").select("value").eq("id", 1).single();
-      if (data) countEl.innerText = data.value;
+      const { data, error } = await supabase
+        .from("counter")
+        .select("value")
+        .eq("id", COUNTER_ID)
+        .single();
+      if (error) {
+        console.error("Fetch Error:", error);
+      } else {
+        countEl.innerText = data.value;
+      }
+    }
+
+    async function update(delta) {
+      const current = parseInt(countEl.innerText);
+      const newValue = current + delta;
+      const { error } = await supabase
+        .from("counter")
+        .update({ value: newValue })
+        .eq("id", COUNTER_ID);
+      if (error) console.error("Update Error:", error);
+    }
+
+    async function reset() {
+      const { error } = await supabase
+        .from("counter")
+        .update({ value: 0 })
+        .eq("id", COUNTER_ID);
+      if (error) console.error("Reset Error:", error);
     }
 
     supabase
       .channel("realtime:counter")
-      .on("postgres_changes", { event: "*", schema: "public", table: "counter", filter: "id=eq.1" }, payload => {
-        countEl.innerText = payload.new.value;
-      })
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "counter", filter: `id=eq.${COUNTER_ID}` },
+        (payload) => {
+          countEl.innerText = payload.new.value;
+        }
+      )
       .subscribe();
-
-    async function update(delta) {
-      await supabase.rpc("increment_counter", { inc: delta });
-    }
 
     incBtn.onclick = () => update(1);
     decBtn.onclick = () => update(-1);
-    rstBtn.onclick = () => supabase.from("counter").update({ value: 0 }).eq("id", 1);
+    rstBtn.onclick = reset;
 
     fetchCount();
   </script>
