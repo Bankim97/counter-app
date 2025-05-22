@@ -28,7 +28,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const { createClient } = supabase; // ✅ 필수! 이거 없으면 작동 안함
+    const { createClient } = supabase; // ✅ 필수! 이 줄이 누락되면 작동하지 않습니다.
 
     const SUPABASE_URL = "https://maemi7839-gmail-com-s-project.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeGVma2J2b2FkYXB2dHJ5cmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5MTIyNDcsImV4cCI6MjA2MzQ4ODI0N30.oc8AuJIl177tADqZaRshqldz_e_NtVjZZ-W2oOJSocg";
