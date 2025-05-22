@@ -3,59 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>카운터</title>
+  <title>실시간 카운터</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
       padding: 50px;
+      background-color: #f4f4f4;
+      margin: 0;
     }
     #count {
-      font-size: 48px;
-      margin: 20px;
+      font-size: 5rem;
+      margin: 40px 0;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
     }
     button {
-      font-size: 20px;
-      padding: 10px 20px;
-      margin: 5px;
+      font-size: 1.5rem;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    @media (max-width: 600px) {
+      #count {
+        font-size: 3rem;
+      }
+      button {
+        width: 100%;
+        max-width: 280px;
+        font-size: 1.2rem;
+      }
+      .button-group {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>COUNTER</h1>
+  <h1>실시간 카운터</h1>
   <div id="count">0</div>
-  <button id="increase">↑</button>
-  <button id="decrease">↓</button>
-  <button id="reset">reset</button>
+  <div class="button-group">
+    <button id="increase">위</button>
+    <button id="decrease">아래</button>
+    <button id="reset">리셋</button>
+  </div>
 
-  <script>
+  <!-- ✅ Firebase 코드 포함된 스크립트 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDqtiRZr8Wo8Ze-4Zfvk2PEIuViTWWQBgq",
+      authDomain: "realtime-counter-c7933.firebaseapp.com",
+      databaseURL: "https://realtime-counter-c7933-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "realtime-counter-c7933",
+      storageBucket: "realtime-counter-c7933.appspot.com",
+      messagingSenderId: "126643244800",
+      appId: "1:126643244800:web:07115c0441e2a5d19d6de5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const countRef = ref(db, "sharedCounter");
+
     const countEl = document.getElementById('count');
     const increaseBtn = document.getElementById('increase');
     const decreaseBtn = document.getElementById('decrease');
     const resetBtn = document.getElementById('reset');
 
-    let count = parseInt(localStorage.getItem('counter') || '0');
-    countEl.innerText = count;
+    // 실시간 데이터 반영
+    onValue(countRef, (snapshot) => {
+      const val = snapshot.val();
+      countEl.innerText = val ?? 0;
+    });
 
-    increaseBtn.onclick = () => {
-      count++;
-      update();
-    };
-
-    decreaseBtn.onclick = () => {
-      count--;
-      update();
-    };
-
-    resetBtn.onclick = () => {
-      count = 0;
-      update();
-    };
-
-    function update() {
-      countEl.innerText = count;
-      localStorage.setItem('counter', count);
+    // 카운트 업데이트 함수
+    function updateCount(delta) {
+      onValue(countRef, (snapshot) => {
+        const current = snapshot.val() ?? 0;
+        set(countRef, current + delta);
+      }, { onlyOnce: true });
     }
+
+    increaseBtn.onclick = () => updateCount(1);
+    decreaseBtn.onclick = () => updateCount(-1);
+    resetBtn.onclick = () => set(countRef, 0);
   </script>
 </body>
 </html>
