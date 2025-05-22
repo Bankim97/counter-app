@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>카운터</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    #count {
+      font-size: 48px;
+      margin: 20px;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>COUNTER</h1>
+  <div id="count">0</div>
+  <button id="increase">↑</button>
+  <button id="decrease">↓</button>
+  <button id="reset">reset</button>
+
+  <script>
+    const countEl = document.getElementById('count');
+    const increaseBtn = document.getElementById('increase');
+    const decreaseBtn = document.getElementById('decrease');
+    const resetBtn = document.getElementById('reset');
+
+    let count = parseInt(localStorage.getItem('counter') || '0');
+    countEl.innerText = count;
+
+    increaseBtn.onclick = () => {
+      count++;
+      update();
+    };
+
+    decreaseBtn.onclick = () => {
+      count--;
+      update();
+    };
+
+    resetBtn.onclick = () => {
+      count = 0;
+      update();
+    };
+
+    function update() {
+      countEl.innerText = count;
+      localStorage.setItem('counter', count);
+    }
+  </script>
+</body>
+</html>
