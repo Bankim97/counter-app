@@ -63,7 +63,7 @@
     <button id="reset">리셋</button>
   </div>
 
-  <!-- ✅ Firebase compat SDK 로딩 -->
+  <!-- Firebase SDK (compat 버전) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script>
@@ -86,14 +86,19 @@
     const decreaseBtn = document.getElementById('decrease');
     const resetBtn = document.getElementById('reset');
 
-    // ✅ 실시간 반영
-    countRef.on("value", (snapshot) => {
+    // 실시간 반영
+    countRef.on("value", function(snapshot) {
       const val = snapshot.val();
-      countEl.innerText = typeof val === "number" ? val : 0;
+      if (typeof val === "number") {
+        countEl.innerText = val;
+      } else {
+        countEl.innerText = 0;
+        countRef.set(0);  // 초기화
+      }
     });
 
     function updateCount(delta) {
-      countRef.get().then((snapshot) => {
+      countRef.once("value").then(function(snapshot) {
         const current = snapshot.val() ?? 0;
         countRef.set(current + delta);
       });
